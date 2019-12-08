@@ -1,0 +1,8 @@
+bin
+*.iml
+.classpath
+.project
+.settings
+*.json
+*.ccbi
+*.plist
