@@ -2,6 +2,8 @@ bin
 *.iml
 .classpath
 .project
+.classpath.xml
+.project.xml
 .settings
 *.json
 *.ccbi
