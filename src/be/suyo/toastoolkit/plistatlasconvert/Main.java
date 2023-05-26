@@ -52,19 +52,23 @@ public class Main {
 
                 boolean rot = ((NSNumber) frame.objectForKey("rotated")).boolValue();
 
-                Matcher offsetValues = pattern2v.matcher(((NSString) frame.objectForKey("offset")).getContent());
-                if (!offsetValues.find()) {
-                    throw new RuntimeException("Invalid value for offset: ");
+                Matcher sourceColorRectValues =
+                        pattern4v.matcher(((NSString) frame.objectForKey("sourceColorRect")).getContent());
+                if (!sourceColorRectValues.find()) {
+                    throw new RuntimeException("Invalid value for sourceColorRect: ");
                 }
-                int ox = Integer.parseInt(offsetValues.group(1));
-                int oy = Integer.parseInt(offsetValues.group(2));
+                int ox = Integer.parseInt(sourceColorRectValues.group(1));
+                int oy = Integer.parseInt(sourceColorRectValues.group(2));
+                int ow = Integer.parseInt(sourceColorRectValues.group(3));
+                int oh = Integer.parseInt(sourceColorRectValues.group(4));
 
-                Matcher sizeValues = pattern2v.matcher(((NSString) frame.objectForKey("sourceSize")).getContent());
-                if (!sizeValues.find()) {
+                Matcher sourceSizeValues =
+                        pattern2v.matcher(((NSString) frame.objectForKey("sourceSize")).getContent());
+                if (!sourceSizeValues.find()) {
                     throw new RuntimeException("Invalid value for sourceSize");
                 }
-                int sw = Integer.parseInt(sizeValues.group(1));
-                int sh = Integer.parseInt(sizeValues.group(2));
+                int sw = Integer.parseInt(sourceSizeValues.group(1));
+                int sh = Integer.parseInt(sourceSizeValues.group(2));
 
                 boolean isTrimmed = ox != 0 || oy != 0 || sw != w || sh != h;
 
@@ -75,7 +79,7 @@ public class Main {
                         .append(",\"y\":").append(y).append(",\"w\":").append(w).append(",\"h\":").append(h)
                         .append("},").append("\"rotated\": ").append(rot).append(",").append("\"trimmed\": ")
                         .append(isTrimmed).append(",").append("\"spriteSourceSize\": {\"x\":").append(ox)
-                        .append(",\"y\":").append(oy).append(",\"w\": ").append(w).append(",\"h\": ").append(h)
+                        .append(",\"y\":").append(oy).append(",\"w\": ").append(ow).append(",\"h\": ").append(oh)
                         .append("},").append("\"sourceSize\": {\"w\":").append(sw).append(",\"h\":").append(sh)
                         .append("}}");
             }
