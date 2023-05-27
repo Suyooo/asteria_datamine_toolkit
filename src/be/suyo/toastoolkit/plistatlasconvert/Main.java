@@ -52,16 +52,6 @@ public class Main {
 
                 boolean rot = ((NSNumber) frame.objectForKey("rotated")).boolValue();
 
-                Matcher sourceColorRectValues =
-                        pattern4v.matcher(((NSString) frame.objectForKey("sourceColorRect")).getContent());
-                if (!sourceColorRectValues.find()) {
-                    throw new RuntimeException("Invalid value for sourceColorRect: ");
-                }
-                int ox = Integer.parseInt(sourceColorRectValues.group(1));
-                int oy = Integer.parseInt(sourceColorRectValues.group(2));
-                int ow = Integer.parseInt(sourceColorRectValues.group(3));
-                int oh = Integer.parseInt(sourceColorRectValues.group(4));
-
                 Matcher sourceSizeValues =
                         pattern2v.matcher(((NSString) frame.objectForKey("sourceSize")).getContent());
                 if (!sourceSizeValues.find()) {
@@ -69,6 +59,20 @@ public class Main {
                 }
                 int sw = Integer.parseInt(sourceSizeValues.group(1));
                 int sh = Integer.parseInt(sourceSizeValues.group(2));
+
+                Matcher sourceColorRectValues =
+                        pattern4v.matcher(((NSString) frame.objectForKey("sourceColorRect")).getContent());
+                if (!sourceColorRectValues.find()) {
+                    throw new RuntimeException("Invalid value for sourceColorRect: ");
+                }
+                int ox = Integer.parseInt(sourceColorRectValues.group(1));
+                int oy = rot ? -Integer.parseInt(sourceColorRectValues.group(2)) :
+                        Integer.parseInt(sourceColorRectValues.group(2));
+                int ow = Integer.parseInt(sourceColorRectValues.group(3));
+                int oh = Integer.parseInt(sourceColorRectValues.group(4));
+                if (ow != w || oh != h) {
+                    throw new RuntimeException("sourceColorRect requires scaling, unsupported by PIXI");
+                }
 
                 boolean isTrimmed = ox != 0 || oy != 0 || sw != w || sh != h;
 
@@ -78,12 +82,15 @@ public class Main {
                 out.append("{\"filename\":\"").append(keys[i]).append("\",").append("\"frame\": {\"x\":").append(x)
                         .append(",\"y\":").append(y).append(",\"w\":").append(w).append(",\"h\":").append(h)
                         .append("},").append("\"rotated\": ").append(rot).append(",").append("\"trimmed\": ")
-                        .append(isTrimmed).append(",").append("\"spriteSourceSize\": {\"x\":").append(ox)
-                        .append(",\"y\":").append(oy).append(",\"w\": ").append(ow).append(",\"h\": ").append(oh)
-                        .append("},").append("\"sourceSize\": {\"w\":").append(sw).append(",\"h\":").append(sh)
-                        .append("}}");
+                        .append(isTrimmed);
+                if (isTrimmed) {
+                    out.append(",").append("\"spriteSourceSize\": {\"x\":").append(ox).append(",\"y\":").append(oy)
+                            .append("},").append("\"sourceSize\": {\"w\":").append(sw).append(",\"h\":").append(sh)
+                            .append("}");
+                }
+                out.append("}");
             }
-            out.append("],\"meta\": {}}");
+            out.append("],\"meta\": {\"scale\": \"1.0\"}}");
 
             if (args[1].equals(".")) {
                 System.out.println(out);
