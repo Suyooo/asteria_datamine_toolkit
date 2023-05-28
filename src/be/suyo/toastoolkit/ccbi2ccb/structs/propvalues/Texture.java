@@ -6,20 +6,24 @@ import com.dd.plist.NSString;
 import be.suyo.toastoolkit.ccbi2ccb.structs.PropertyValue;
 
 public class Texture extends PropertyValue {
-    private String spriteFile;
+    private String textureFile;
     
-    public Texture(String spriteFile) {
-        this.spriteFile = spriteFile;
+    public Texture(String textureFile) {
+        this.textureFile = textureFile;
+    }
+
+    public String getTextureFile() {
+        return textureFile;
     }
     
     @Override
     public String toString() {
-        return "Texture[" + spriteFile + "]";
+        return "Texture[" + textureFile + "]";
     }
 
     @Override
     public NSObject toPlist() {
-        return new NSString(spriteFile);
+        return new NSString(textureFile);
     }
 
 }

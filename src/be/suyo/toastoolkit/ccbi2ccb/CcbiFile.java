@@ -5,6 +5,7 @@ import java.util.HashSet;
 
 import be.suyo.toastoolkit.ccbi2ccb.structs.*;
 import be.suyo.toastoolkit.ccbi2ccb.structs.propvalues.SpriteFrame;
+import be.suyo.toastoolkit.ccbi2ccb.structs.propvalues.Texture;
 import be.suyo.toastoolkit.ccbi2ccb.util.Biterator;
 import be.suyo.toastoolkit.ccbi2ccb.util.CcbiException;
 import be.suyo.toastoolkit.ccbi2ccb.util.PlistToJson;
@@ -29,11 +30,16 @@ public class CcbiFile {
     private double maxTime;
 
     private HashSet<String> resourcesAtlas = new HashSet<>();
+    private HashSet<String> resourcesTexture = new HashSet<>();
     private HashSet<String> resourcesAudioVoice = new HashSet<>();
     private HashSet<String> resourcesAudioSFX = new HashSet<>();
 
     public HashSet<String> getResourcesAtlas() {
         return resourcesAtlas;
+    }
+
+    public HashSet<String> getResourcesTexture() {
+        return resourcesTexture;
     }
 
     public HashSet<String> getResourcesAudioVoice() {
@@ -61,15 +67,12 @@ public class CcbiFile {
 
     private void parseHeader() throws IOException {
         // First four bytes must be "ibcc"
-        if (this.nextByte() != 'i' || this.nextByte() != 'b'
-                || this.nextByte() != 'c' || this.nextByte() != 'c') {
+        if (this.nextByte() != 'i' || this.nextByte() != 'b' || this.nextByte() != 'c' || this.nextByte() != 'c') {
             throw new CcbiException("Invalid File Header - not a CCBI file");
         }
         version = this.nextUint();
         if (version != 5) {
-            throw new CcbiException(
-                    "Invalid File Version - this reader is written for v5, file is v"
-                            + version);
+            throw new CcbiException("Invalid File Version - this reader is written for v5, file is v" + version);
         }
         usesJsController = this.nextBoolean();
     }
@@ -124,7 +127,7 @@ public class CcbiFile {
         Node n = new Node();
 
         n.className = this.nextCString();
-        System.out.println("Reading node of class " + n.className);
+        //System.out.println("Reading node of class " + n.className);
         if (usesJsController) {
             n.jsController = this.nextCString();
         } else {
@@ -139,7 +142,7 @@ public class CcbiFile {
 
         int nodeSeqLength = (int) this.nextUint();
         n.nodeSequences = new NodeSequence[nodeSeqLength];
-        System.out.println(nodeSeqLength + " node sequences");
+        //System.out.println(nodeSeqLength + " node sequences");
         for (int i = 0; i < nodeSeqLength; i++) {
             n.nodeSequences[i] = new NodeSequence();
             n.nodeSequences[i].sequenceId = this.nextUint();
@@ -148,42 +151,39 @@ public class CcbiFile {
             for (int j = 0; j < seqPropLength; j++) {
                 n.nodeSequences[i].properties[j] = new NodeSequenceProperty();
                 n.nodeSequences[i].properties[j].name = this.nextCString();
-                n.nodeSequences[i].properties[j].type =
-                        PropertyType.values()[(int) this.nextUint()];
+                n.nodeSequences[i].properties[j].type = PropertyType.values()[(int) this.nextUint()];
 
                 int keyframeLength = (int) this.nextUint();
                 n.nodeSequences[i].properties[j].keyframes = new Keyframe[keyframeLength];
                 for (int k = 0; k < keyframeLength; k++) {
                     n.nodeSequences[i].properties[j].keyframes[k] = new Keyframe();
-                    n.nodeSequences[i].properties[j].keyframes[k].time =
-                            this.nextFloat();
+                    n.nodeSequences[i].properties[j].keyframes[k].time = this.nextFloat();
                     n.nodeSequences[i].properties[j].keyframes[k].easingType =
                             EasingType.values()[(int) this.nextUint()];
                     if (n.nodeSequences[i].properties[j].keyframes[k].easingType.hasOpt) {
-                        n.nodeSequences[i].properties[j].keyframes[k].easingOpt =
-                                this.nextFloat();
+                        n.nodeSequences[i].properties[j].keyframes[k].easingOpt = this.nextFloat();
                     }
-                    n.nodeSequences[i].properties[j].keyframes[k].value = PropertyValue
-                            .readValueForAnimationType(this, n.nodeSequences[i].properties[j].type);
+                    n.nodeSequences[i].properties[j].keyframes[k].value =
+                            PropertyValue.readValueForAnimationType(this, n.nodeSequences[i].properties[j].type);
                 }
             }
         }
 
         int propLength = (int) (this.nextUint() + this.nextUint());
         n.properties = new Property[propLength];
-        System.out.println(propLength + " properties");
+        //System.out.println(propLength + " properties");
         for (int i = 0; i < propLength; i++) {
             n.properties[i] = new Property();
             n.properties[i].type = PropertyType.values()[(int) this.nextUint()];
             n.properties[i].propertyName = this.nextCString();
             n.properties[i].platform = Platform.values()[this.nextByte()];
             n.properties[i].value = PropertyValue.readValueForType(this, n.properties[i].type);
-            System.out.println("  " + n.properties[i]);
+            //System.out.println("  " + n.properties[i]);
         }
 
         int childrenLength = (int) this.nextUint();
         n.children = new Node[childrenLength];
-        System.out.println(childrenLength + " children");
+        //System.out.println(childrenLength + " children");
         for (int i = 0; i < childrenLength; i++) {
             n.children[i] = parseNode();
         }
@@ -196,8 +196,9 @@ public class CcbiFile {
             for (NodeSequence ns : n.nodeSequences) {
                 for (NodeSequenceProperty nsp : ns.properties) {
                     for (Keyframe k : nsp.keyframes) {
-                        if (k.time > maxTime)
+                        if (k.time > maxTime) {
                             maxTime = k.time;
+                        }
                     }
                 }
             }
@@ -208,24 +209,31 @@ public class CcbiFile {
                     if (!s.isEmpty()) {
                         resourcesAtlas.add(s.substring(0, s.length() - 6));
                     }
+                } else if (np.propertyName.equals("texture")) {
+                    Texture npv = (Texture) np.value;
+                    String s = npv.getTextureFile();
+                    if (!s.isEmpty()) {
+                        resourcesTexture.add(s);
+                    }
                 }
             }
         }
         for (Sequence s : sequences) {
             for (CallbackKeyframe sck : s.callbacks) {
-                if (sck.time > maxTime)
+                if (sck.time > maxTime) {
                     maxTime = sck.time;
+                }
 
                 if (sck.callbackName.startsWith("seplay_")) {
                     resourcesAudioSFX.add(sck.callbackName.substring(7));
                 } else if (sck.callbackName.startsWith("voiceplay_")) {
-                    resourcesAudioVoice
-                            .add(sck.callbackName.substring(10).replaceFirst("_", "/"));
+                    resourcesAudioVoice.add(sck.callbackName.substring(10).replaceFirst("_", "/"));
                 }
             }
             for (SoundKeyframe ssk : s.sounds) {
-                if (ssk.time > maxTime)
+                if (ssk.time > maxTime) {
                     maxTime = ssk.time;
+                }
             }
         }
     }
@@ -370,6 +378,13 @@ public class CcbiFile {
         }
         resDict.put("atlas", resAtlasArr);
 
+        NSArray resTextureArr = new NSArray(this.resourcesTexture.size());
+        i = 0;
+        for (String s : this.resourcesTexture) {
+            resTextureArr.setValue(i++, s);
+        }
+        resDict.put("texture", resTextureArr);
+
         NSArray resSoundSArr = new NSArray(this.resourcesAudioSFX.size());
         i = 0;
         for (String s : this.resourcesAudioSFX) {
@@ -390,9 +405,9 @@ public class CcbiFile {
     }
 
     private void save(String filename, String data) throws IOException {
-        if (filename.equals("."))
+        if (filename.equals(".")) {
             System.out.println(data);
-        else {
+        } else {
             PrintWriter outfile = new PrintWriter(filename);
             outfile.write(data);
             outfile.close();
